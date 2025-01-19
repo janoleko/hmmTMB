@@ -196,7 +196,8 @@ MarkovChain <- R6Class(
       # Initialise coeff_fe and coeff_re to 0
       self$update_coeff_fe(rep(0, sum(ncol_fe)))
       self$update_coeff_re(rep(0, ncol(mats$X_re)))
-      self$update_lambda(rep(1, ifelse(is.null(ncol_re), 0, ncol(ncol_re))))
+      # Changing initial lambdas
+      self$update_lambda(rep(1000, ifelse(is.null(ncol_re), 0, ncol(ncol_re))))
       
       # Setup initial distribution
       private$initial_state_ <- initial_state
