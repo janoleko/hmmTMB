@@ -41,6 +41,8 @@ Observation <- R6Class(
     #' Each element is a named vector of coefficients that should either be 
     #' fixed (if the corresponding element is set to NA) or estimated to a 
     #' common value (using integers or factor levels).
+    #' @param gam_args Named list of arguments passed to \code{mgcv::gam()} in
+    #' \code{Observation$make_mat()}, e.g., "knots". Use at your own risk.
     #' 
     #' @return A new Observation object
     #' 
@@ -72,7 +74,8 @@ Observation <- R6Class(
                           formulas = NULL, 
                           n_states = NULL, 
                           par,
-                          fixpar = NULL) {
+                          fixpar = NULL,
+                          gam_args = NULL) {
       private$check_args(data = data, 
                          dists = dists, 
                          n_states = n_states, 
@@ -96,10 +99,16 @@ Observation <- R6Class(
         private$empty_ <- FALSE
       }
       
+      # Save user-specified arguments for mgcv::gam()
+      private$gam_args_ <- gam_args
+      
       # Make sure there is an ID column in the data and it's a factor
       if(!("ID" %in% names(data))) {
         data$ID <- factor(1)
       } else {
+        if(!check_contiguous(data$ID)) {
+          stop("Observations for each ID must be contiguous in data.")
+        }
         data$ID <- factor(data$ID)
       }
       
@@ -464,6 +473,9 @@ Observation <- R6Class(
     #' @description Empty model? (for simulation only)
     empty = function() {return(private$empty_)},
     
+    #' @description Extra arguments for mgcv::gam (passed to make_matrices)
+    gam_args = function() {return(private$gam_args_)},
+    
     # Mutators ----------------------------------------------------------------
     
     #' @description Update parameters
@@ -561,7 +573,8 @@ Observation <- R6Class(
     make_mat = function(new_data = NULL) {
       make_matrices(formulas = self$formulas(),
                     data = self$data(),
-                    new_data = new_data)
+                    new_data = new_data,
+                    gam_args = self$gam_args())
     },
     
     #' @description Design matrices for grid of covariates
@@ -1003,6 +1016,7 @@ Observation <- R6Class(
     fixpar_user_ = NULL,
     fixpar_ = NULL,
     empty_ = NULL,
+    gam_args_ = NULL,
     
     #' Check constructor arguments 
     # (For argument description, see constructor)
